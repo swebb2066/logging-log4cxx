@@ -52,11 +52,11 @@ namespace log4cxx
 #endif
 
 #if LOG4CXX_LOGCHAR_IS_UTF8
-	typedef char logchar;
+	typedef unsigned char logchar;
 	#if LOG4CXX_CHARSET_EBCDIC
 		#define LOG4CXX_STR(str) log4cxx::helpers::Transcoder::decode(str)
 	#else
-		#define LOG4CXX_STR(str) str
+		#define LOG4CXX_STR(str) reinterpret_cast<const unsigned char*>(str)
 	#endif
 #endif
 

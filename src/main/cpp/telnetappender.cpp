@@ -170,8 +170,8 @@ void TelnetAppender::write(ByteBuffer& buf)
 
 void TelnetAppender::writeStatus(const SocketPtr& socket, const LogString& msg, Pool& p)
 {
-	size_t bytesSize = msg.size() * 2;
-	char* bytes = p.pstralloc(bytesSize);
+	size_t				bytesSize	= msg.size() * 2;
+	ByteBuffer::Bytes	bytes		= (ByteBuffer::Bytes) p.pstralloc(bytesSize);
 
 	LogString::const_iterator msgIter(msg.begin());
 	ByteBuffer buf(bytes, bytesSize);
@@ -194,8 +194,9 @@ void TelnetAppender::append(const spi::LoggingEventPtr& event, Pool& p)
 		LogString msg;
 		this->layout->format(msg, event, pool);
 		msg.append(LOG4CXX_STR("\r\n"));
-		size_t bytesSize = msg.size() * 2;
-		char* bytes = p.pstralloc(bytesSize);
+
+		size_t				bytesSize	= msg.size() * 2;
+		ByteBuffer::Bytes	bytes		= (ByteBuffer::Bytes) p.pstralloc(bytesSize);
 
 		LogString::const_iterator msgIter(msg.begin());
 		ByteBuffer buf(bytes, bytesSize);

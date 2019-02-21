@@ -103,9 +103,9 @@ void FileOutputStream::write(ByteBuffer& buf, Pool& /* p */ )
 		throw IOException(-1);
 	}
 
-	size_t nbytes = buf.remaining();
-	size_t pos = buf.position();
-	const char* data = buf.data();
+			size_t				nbytes	= buf.remaining();
+			size_t				pos		= buf.position();
+	const	ByteBuffer::Bytes	data	= buf.data();
 
 	while (nbytes > 0)
 	{

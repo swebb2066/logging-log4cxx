@@ -336,8 +336,9 @@ void FileAppender::setFile(
 	//
 	if (writeBOM)
 	{
-		char bom[] = { (char) 0xFE, (char) 0xFF };
-		ByteBuffer buf(bom, 2);
+		ByteBuffer::Byte	bom[] = { 0xFE, 0xFF };
+		ByteBuffer			buf(bom, 2);
+
 		outStream->write(buf, p);
 	}
 

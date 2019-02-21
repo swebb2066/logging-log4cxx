@@ -114,7 +114,7 @@ size_t Socket::write(ByteBuffer& buf)
 		// SIGPIPE handler.
 #if APR_HAVE_SIGACTION
 		apr_sigfunc_t* old = apr_signal(SIGPIPE, SIG_IGN);
-		apr_status_t status = apr_socket_send(socket, buf.current(), &written);
+		apr_status_t status = apr_socket_send(socket, reinterpret_cast<char*>(buf.current()), &written);
 		apr_signal(SIGPIPE, old);
 #else
 		apr_status_t status = apr_socket_send(socket, buf.current(), &written);

@@ -64,7 +64,7 @@ void InputStreamReader::close(Pool& )
 LogString InputStreamReader::read(Pool& p)
 {
 	const size_t BUFSIZE = 4096;
-	ByteBuffer buf(p.pstralloc(BUFSIZE), BUFSIZE);
+	ByteBuffer buf((ByteBuffer::Bytes) p.pstralloc(BUFSIZE), BUFSIZE);
 	LogString output;
 
 	// read whole file

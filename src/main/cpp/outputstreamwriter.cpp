@@ -75,8 +75,8 @@ void OutputStreamWriter::write(const LogString& str, Pool& p)
 		ByteBuffer buf(rawbuf, (size_t) bufSize);
 #else
 		enum { BUFSIZE = 1024 };
-		char rawbuf[BUFSIZE];
-		ByteBuffer buf(rawbuf, (size_t) BUFSIZE);
+		ByteBuffer::Byte	rawbuf[BUFSIZE];
+		ByteBuffer			buf(rawbuf, (size_t) BUFSIZE);
 #endif
 		enc->reset();
 		LogString::const_iterator iter = str.begin();

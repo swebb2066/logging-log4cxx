@@ -38,7 +38,6 @@
 using namespace log4cxx;
 using namespace log4cxx::helpers;
 
-
 void Transcoder::decodeUTF8(const std::string& src, LogString& dst)
 {
 	std::string::const_iterator iter = src.begin();
@@ -62,7 +61,7 @@ void Transcoder::decodeUTF8(const std::string& src, LogString& dst)
 void Transcoder::encodeUTF8(const LogString& src, std::string& dst)
 {
 #if LOG4CXX_LOGCHAR_IS_UTF8
-	dst.append(src);
+	dst.append(reinterpret_cast<const char*>(src.data()));
 #else
 	LogString::const_iterator iter = src.begin();
 
@@ -87,7 +86,7 @@ void Transcoder::encodeUTF8(const LogString& src, std::string& dst)
 char* Transcoder::encodeUTF8(const LogString& src, Pool& p)
 {
 #if LOG4CXX_LOGCHAR_IS_UTF8
-	return p.pstrdup(src);
+	return p.pstrdup(reinterpret_cast<const char*>(src.data()));
 #else
 	std::string tmp;
 	encodeUTF8(src, tmp);
@@ -102,33 +101,33 @@ void Transcoder::encodeUTF8(unsigned int sv, ByteBuffer& dst)
 	dst.position(dst.position() + bytes);
 }
 
-
-size_t Transcoder::encodeUTF8(unsigned int ch, char* dst)
+template<typename Char>
+static size_t encodeUTF8(unsigned int ch, Char* dst)
 {
 	if (ch < 0x80)
 	{
-		dst[0] = (char) ch;
+		dst[0] = (Char) ch;
 		return 1;
 	}
 	else if (ch < 0x800)
 	{
-		dst[0] = (char) (0xC0 + (ch >> 6));
-		dst[1] = (char) (0x80 + (ch & 0x3F));
+		dst[0] = (Char) (0xC0 + (ch >> 6));
+		dst[1] = (Char) (0x80 + (ch & 0x3F));
 		return 2;
 	}
 	else if (ch < 0x10000)
 	{
-		dst[0] = (char) (0xE0 + (ch >> 12));
-		dst[1] = (char) (0x80 + ((ch >> 6) & 0x3F));
-		dst[2] = (char) (0x80 + (ch & 0x3F));
+		dst[0] = (Char) (0xE0 + (ch >> 12));
+		dst[1] = (Char) (0x80 + ((ch >> 6) & 0x3F));
+		dst[2] = (Char) (0x80 + (ch & 0x3F));
 		return 3;
 	}
 	else if (ch <= 0x10FFFF)
 	{
-		dst[0] = (char) (0xF0 + (ch >> 18));
-		dst[1] = (char) (0x80 + ((ch >> 12) & 0x3F));
-		dst[2] = (char) (0x80 + ((ch >> 6) & 0x3F));
-		dst[3] = (char) (0x80 + (ch & 0x3F));
+		dst[0] = (Char) (0xF0 + (ch >> 18));
+		dst[1] = (Char) (0x80 + ((ch >> 12) & 0x3F));
+		dst[2] = (Char) (0x80 + ((ch >> 6) & 0x3F));
+		dst[3] = (Char) (0x80 + (ch & 0x3F));
 		return 4;
 	}
 	else
@@ -136,11 +135,16 @@ size_t Transcoder::encodeUTF8(unsigned int ch, char* dst)
 		//
 		//  output UTF-8 encoding of 0xFFFF
 		//
-		dst[0] = (char) 0xEF;
-		dst[1] = (char) 0xBF;
-		dst[2] = (char) 0xBF;
+		dst[0] = (Char) 0xEF;
+		dst[1] = (Char) 0xBF;
+		dst[2] = (Char) 0xBF;
 		return 3;
 	}
+}
+
+size_t Transcoder::encodeUTF8(unsigned int ch, unsigned char* dst)
+{
+	return ::encodeUTF8(ch, dst);
 }
 
 void Transcoder::encodeUTF16BE(unsigned int sv, ByteBuffer& dst)
@@ -150,26 +154,26 @@ void Transcoder::encodeUTF16BE(unsigned int sv, ByteBuffer& dst)
 }
 
 
-size_t Transcoder::encodeUTF16BE(unsigned int ch, char* dst)
+size_t Transcoder::encodeUTF16BE(unsigned int ch, unsigned char* dst)
 {
 	if (ch <= 0xFFFF)
 	{
-		dst[0] = (char) (ch >> 8);
-		dst[1] = (char) (ch & 0xFF);
+		dst[0] = (ch >>    8);
+		dst[1] = (ch  & 0xFF);
 		return 2;
 	}
 
 	if (ch <= 0x10FFFF)
 	{
-		unsigned char w = (unsigned char) ((ch >> 16) - 1);
-		dst[0] = (char) (0xD8 + (w >> 2));
-		dst[1] = (char) (((w & 0x03) << 6) + ((ch >> 10) & 0x3F));
-		dst[2] = (char) (0xDC + ((ch & 0x30) >> 4));
-		dst[3] = (char) (ch & 0xFF);
+		unsigned char w = ((ch >> 16) - 1);
+		dst[0] = (0xD8 + (w >> 2));
+		dst[1] = (((w & 0x03) << 6) + ((ch >> 10) & 0x3F));
+		dst[2] = (0xDC + ((ch & 0x30) >> 4));
+		dst[3] = (ch & 0xFF);
 		return 4;
 	}
 
-	dst[0] = dst[1] = (char) 0xFF;
+	dst[0] = dst[1] = 0xFF;
 	return 2;
 }
 
@@ -179,35 +183,34 @@ void Transcoder::encodeUTF16LE(unsigned int sv, ByteBuffer& dst)
 	dst.position(dst.position() + bytes);
 }
 
-size_t Transcoder::encodeUTF16LE(unsigned int ch, char* dst)
+size_t Transcoder::encodeUTF16LE(unsigned int ch, unsigned char* dst)
 {
 	if (ch <= 0xFFFF)
 	{
-		dst[1] = (char) (ch >> 8);
-		dst[0] = (char) (ch & 0xFF);
+		dst[1] = (ch >>    8);
+		dst[0] = (ch  & 0xFF);
 		return 2;
 	}
 
 	if (ch <= 0x10FFFF)
 	{
-		unsigned char w = (unsigned char) ((ch >> 16) - 1);
-		dst[1] = (char) (0xD8 + (w >> 2));
-		dst[0] = (char) (((w & 0x03) << 6) + ((ch >> 10) & 0x3F));
-		dst[3] = (char) (0xDC + ((ch & 0x30) >> 4));
-		dst[2] = (char) (ch & 0xFF);
+		unsigned char w = ((ch >> 16) - 1);
+		dst[1] = (0xD8 + (w >> 2));
+		dst[0] = (((w & 0x03) << 6) + ((ch >> 10) & 0x3F));
+		dst[3] = (0xDC + ((ch & 0x30) >> 4));
+		dst[2] = (ch & 0xFF);
 		return 4;
 	}
 
-	dst[0] = dst[1] = (char) 0xFF;
+	dst[0] = dst[1] = 0xFF;
 	return 2;
 }
 
-
-unsigned int Transcoder::decode(const std::string& src,
-	std::string::const_iterator& iter)
+template<class String, class Iterator>
+static unsigned int decodeUTF8(const String& src, Iterator& iter)
 {
-	std::string::const_iterator start(iter);
-	unsigned char ch1 = *(iter++);
+	typename	String::const_iterator	start(iter);
+				unsigned char			ch1 = *(iter++);
 
 	if (ch1 <= 0x7F)
 	{
@@ -301,14 +304,33 @@ unsigned int Transcoder::decode(const std::string& src,
 	return 0xFFFF;
 }
 
+unsigned int Transcoder::decode(const	std::string&					src,
+										std::string::const_iterator&	iter)
+{
+	return ::decodeUTF8(src, iter);
+}
+
+unsigned int Transcoder::decode(const	LogString&					src,
+										LogString::const_iterator&	iter)
+{
+	return ::decodeUTF8(src, iter);
+}
 
 void Transcoder::encode(unsigned int sv, std::string& dst)
 {
-	char tmp[8];
-	size_t bytes = encodeUTF8(sv, tmp);
+	char	tmp[8];
+	size_t	bytes = ::encodeUTF8(sv, tmp);
+
 	dst.append(tmp, bytes);
 }
 
+void Transcoder::encode(unsigned int sv, std::basic_string<unsigned char>& dst)
+{
+	unsigned char	tmp[8];
+	size_t			bytes = ::encodeUTF8(sv, tmp);
+
+	dst.append(tmp, bytes);
+}
 
 void Transcoder::decode(const std::string& src, LogString& dst)
 {
@@ -392,7 +414,7 @@ void Transcoder::encode(const LogString& src, std::string& dst)
 		{
 			log4cxx_status_t stat = encoder->encode(src, iter, out);
 			out.flip();
-			dst.append(out.data(), out.limit());
+			dst.append(out.data(1), out.limit());
 			out.clear();
 
 			if (CharsetEncoder::isError(stat))
@@ -474,8 +496,6 @@ static void encodeUTF16(unsigned int sv, String& dst)
 		dst.append(1, ls);
 	}
 }
-
-
 
 #if LOG4CXX_WCHAR_T_API || LOG4CXX_LOGCHAR_IS_WCHAR_T || defined(WIN32) || defined(_WIN32)
 void Transcoder::decode(const std::wstring& src, LogString& dst)
@@ -661,7 +681,7 @@ logchar Transcoder::decode(char val)
 LogString Transcoder::decode(const char* val)
 {
 #if LOG4CXX_LOGCHAR_IS_UTF8 && !LOG4CXX_CHARSET_EBCDIC
-	return val;
+	return reinterpret_cast<const unsigned char*>(val);
 #else
 	LogString dst;
 	Transcoder::decode(val, dst);

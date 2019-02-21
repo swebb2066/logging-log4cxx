@@ -110,15 +110,17 @@ class APRCharsetDecoder : public CharsetDecoder
 					size_t inbytes_left = in.remaining();
 					size_t initial_inbytes_left = inbytes_left;
 					size_t pos = in.position();
+
 					apr_size_t outbytes_left = initial_outbytes_left;
 					{
 						synchronized sync(mutex);
 						stat = apr_xlate_conv_buffer((apr_xlate_t*) convset,
-								in.data() + pos,
+								reinterpret_cast<char*>(in.data()) + pos,
 								&inbytes_left,
 								(char*) buf,
 								&outbytes_left);
 					}
+
 					out.append(buf, (initial_outbytes_left - outbytes_left) / sizeof(logchar));
 					in.position(pos + (initial_inbytes_left - inbytes_left));
 				}
@@ -241,14 +243,17 @@ class TrivialCharsetDecoder : public CharsetDecoder
 			LogString& out)
 		{
 			size_t remaining = in.remaining();
-
-			if ( remaining > 0)
+			if (remaining <= 0)
 			{
-				const logchar* src = (const logchar*) (in.data() + in.position());
-				size_t count = remaining / sizeof(logchar);
-				out.append(src, count);
-				in.position(in.position() + remaining);
+				return APR_SUCCESS;
 			}
+
+			log4cxx_status_t	stat	= APR_SUCCESS;
+			const logchar*		src		= (const logchar*) (in.data() + in.position());
+			size_t				count	= remaining / sizeof(logchar);
+
+			out.append(src, count);
+			in.position(in.position() + remaining);
 
 			return APR_SUCCESS;
 		}
@@ -335,22 +340,23 @@ class ISOLatinCharsetDecoder : public CharsetDecoder
 		virtual log4cxx_status_t decode(ByteBuffer& in,
 			LogString& out)
 		{
-			if (in.remaining() > 0)
+			if (in.remaining() <= 0)
 			{
-
-				const unsigned char* src = (unsigned char*) in.current();
-				const unsigned char* srcEnd = src + in.remaining();
-
-				while (src < srcEnd)
-				{
-					unsigned int sv = *(src++);
-					Transcoder::encode(sv, out);
-				}
-
-				in.position(in.limit());
+				return APR_SUCCESS;
 			}
 
-			return APR_SUCCESS;
+			std::string				utf8Tmp;
+			const unsigned char*	src		= (unsigned char*) in.current();
+			const unsigned char*	srcEnd	= src + in.remaining();
+
+			while (src < srcEnd)
+			{
+				unsigned int sv = *(src++);
+				Transcoder::encode(sv, utf8Tmp);
+			}
+
+			in.position(in.limit());
+			Transcoder::decodeUTF8(utf8Tmp, out);
 		}
 
 
@@ -381,32 +387,32 @@ class USASCIICharsetDecoder : public CharsetDecoder
 		virtual log4cxx_status_t decode(ByteBuffer& in,
 			LogString& out)
 		{
-			log4cxx_status_t stat = APR_SUCCESS;
-
-			if (in.remaining() > 0)
+			if (in.remaining() <= 0)
 			{
-
-				const unsigned char* src = (unsigned char*) in.current();
-				const unsigned char* srcEnd = src + in.remaining();
-
-				while (src < srcEnd)
-				{
-					unsigned char sv = *src;
-
-					if (sv < 0x80)
-					{
-						src++;
-						Transcoder::encode(sv, out);
-					}
-					else
-					{
-						stat = APR_BADARG;
-						break;
-					}
-				}
-
-				in.position(src - (const unsigned char*) in.data());
+				return APR_SUCCESS;
 			}
+
+			log4cxx_status_t		stat	= APR_SUCCESS;
+			const unsigned char*	src		= (unsigned char*) in.current();
+			const unsigned char*	srcEnd	= src + in.remaining();
+
+			while (src < srcEnd)
+			{
+				unsigned char sv = *src;
+
+				if (sv < 0x80)
+				{
+					src++;
+					out.push_back(Transcoder::decode(sv));
+				}
+				else
+				{
+					stat = APR_BADARG;
+					break;
+				}
+			}
+
+			in.position(src - (const unsigned char*) in.data());
 
 			return stat;
 		}
@@ -434,8 +440,8 @@ class LocaleCharsetDecoder : public CharsetDecoder
 		virtual log4cxx_status_t decode(ByteBuffer& in,
 			LogString& out)
 		{
-			const char* p = in.current();
-			size_t i = in.position();
+			ByteBuffer::Bytes	p = in.current();
+			size_t				i = in.position();
 #if !LOG4CXX_CHARSET_EBCDIC
 
 			for (; i < in.limit() && ((unsigned int) *p) < 0x80; i++, p++)

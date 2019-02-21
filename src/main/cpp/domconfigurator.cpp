@@ -1102,7 +1102,7 @@ LogString DOMConfigurator::getAttribute(
 	{
 		if (attrName == attr->name)
 		{
-			ByteBuffer buf((char*) attr->value, strlen(attr->value));
+			ByteBuffer buf((ByteBuffer::Bytes) attr->value, strlen(attr->value));
 			utf8Decoder->decode(buf, attrValue);
 		}
 	}

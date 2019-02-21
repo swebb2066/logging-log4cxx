@@ -32,32 +32,41 @@ namespace helpers
 */
 class LOG4CXX_EXPORT ByteBuffer
 {
+	public:
+		typedef	unsigned char	Byte;
+		typedef	Byte*			Bytes;
+
 	private:
-		char* base;
-		size_t pos;
-		size_t lim;
-		size_t cap;
+		Bytes	base;
+		size_t	pos;
+		size_t	lim;
+		size_t	cap;
 
 	public:
+		ByteBuffer(Bytes data, size_t capacity);
 		ByteBuffer(char* data, size_t capacity);
 		~ByteBuffer();
 
 		void clear();
 		void flip();
 
-		inline char* data()
+		inline Bytes data()
 		{
 			return base;
 		}
-		inline const char* data() const
+		inline const Bytes data() const
 		{
 			return base;
 		}
-		inline char* current()
+		inline const char* data(bool deprecated) const
+		{
+			return reinterpret_cast<char*>(base);
+		}
+		inline Bytes current()
 		{
 			return base + pos;
 		}
-		inline const char* current() const
+		inline const Bytes current() const
 		{
 			return base + pos;
 		}
@@ -76,7 +85,7 @@ class LOG4CXX_EXPORT ByteBuffer
 		}
 		void position(size_t newPosition);
 
-		bool put(char byte);
+		bool put(Byte byte);
 
 
 	private:

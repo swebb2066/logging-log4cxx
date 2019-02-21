@@ -276,12 +276,13 @@ log4cxx::pattern::PatternMap TimeBasedRollingPolicy::getFormatSpecifiers() const
 RolloverDescriptionPtr TimeBasedRollingPolicy::initialize(
 	const   LogString&  currentActiveFile,
 	const   bool        append,
-	Pool&       pool)
+			Pool&       pool)
 {
 	apr_time_t n = apr_time_now();
 	nextCheck = ((n / APR_USEC_PER_SEC) + 1) * APR_USEC_PER_SEC;
 
-	File currentFile(currentActiveFile);
+	File currentFile;
+	currentFile.setPath(currentActiveFile);
 
 	LogString buf;
 	ObjectPtr obj(new Date(currentFile.exists(pool) ? currentFile.lastModified(pool) : n));

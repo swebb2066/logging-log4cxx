@@ -76,15 +76,18 @@ class LOG4CXX_EXPORT Transcoder
 		 *   advanced to next character if successful.
 		 *   @return scalar value (UCS-4) or 0xFFFF if invalid sequence.
 		 */
-		static unsigned int decode(const std::string& in,
-			std::string::const_iterator& iter);
+		static unsigned int decode(const	std::string&					in,
+											std::string::const_iterator&	iter);
+		static unsigned int decode(const	LogString&						in,
+											LogString::const_iterator&		iter);
 
 		/**
 		  *   Appends UCS-4 value to a UTF-8 string.
 		  *   @param ch UCS-4 value.
 		  *   @param dst destination.
 		  */
-		static void encode(unsigned int ch, std::string& dst);
+		static void encode(unsigned int ch, std::string&						dst);
+		static void encode(unsigned int ch, std::basic_string<unsigned char>&	dst);
 
 		/**
 		 *    Appends string in the current code-page
@@ -188,9 +191,9 @@ class LOG4CXX_EXPORT Transcoder
 		Transcoder(const Transcoder&);
 		Transcoder& operator=(const Transcoder&);
 		enum { BUFSIZE = 256 };
-		static size_t encodeUTF8(unsigned int ch, char* dst);
-		static size_t encodeUTF16BE(unsigned int ch, char* dst);
-		static size_t encodeUTF16LE(unsigned int ch, char* dst);
+		static size_t encodeUTF8(	unsigned int ch, unsigned char* dst);
+		static size_t encodeUTF16BE(unsigned int ch, unsigned char* dst);
+		static size_t encodeUTF16LE(unsigned int ch, unsigned char* dst);
 
 };
 }

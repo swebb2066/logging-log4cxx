@@ -93,7 +93,7 @@ class APRCharsetEncoder : public CharsetEncoder
 			{
 				synchronized sync(mutex);
 				stat = apr_xlate_conv_buffer(convset, NULL, NULL,
-						out.data() + position, &outbytes_left);
+						reinterpret_cast<char*>(out.data()) + position, &outbytes_left);
 			}
 			else
 			{
@@ -106,7 +106,7 @@ class APRCharsetEncoder : public CharsetEncoder
 					stat = apr_xlate_conv_buffer(convset,
 							(const char*) (in.data() + inOffset),
 							&inbytes_left,
-							out.data() + position,
+							reinterpret_cast<char*>(out.data()) + position,
 							&outbytes_left);
 				}
 				iter += ((initial_inbytes_left - inbytes_left) / sizeof(LogString::value_type));
@@ -226,25 +226,28 @@ class USASCIICharsetEncoder : public CharsetEncoder
 			LogString::const_iterator& iter,
 			ByteBuffer& out)
 		{
+			if (iter == in.end())
+			{
+				return APR_SUCCESS;
+			}
+
 			log4cxx_status_t stat = APR_SUCCESS;
 
-			if (iter != in.end())
+			while ((out.remaining() > 0) && (iter != in.end()))
 			{
-				while (out.remaining() > 0 && iter != in.end())
-				{
-					LogString::const_iterator prev(iter);
-					unsigned int sv = Transcoder::decode(in, iter);
+				LogString::const_iterator	prev(iter);
+				unsigned int				sv = Transcoder::decode(in, iter);
 
-					if (sv <= 0x7F)
-					{
-						out.put((char) sv);
-					}
-					else
-					{
-						iter = prev;
-						stat = APR_BADARG;
-						break;
-					}
+				if (sv <= 0x7F)
+				{
+					out.put((char) sv);
+				}
+				else
+				{
+					iter = prev;
+					stat = APR_BADARG;
+
+					break;
 				}
 			}
 
@@ -463,8 +466,8 @@ class LocaleCharsetEncoder : public CharsetEncoder
 			ByteBuffer& out)
 		{
 #if !LOG4CXX_CHARSET_EBCDIC
-			char* current = out.current();
-			size_t remain = out.remaining();
+			ByteBuffer::Bytes	current	= out.current();
+			size_t				remain	= out.remaining();
 
 			for (;
 				iter != in.end() && ((unsigned int) *iter) < 0x80 && remain > 0;

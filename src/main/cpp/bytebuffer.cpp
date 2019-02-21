@@ -23,8 +23,13 @@
 using namespace log4cxx;
 using namespace log4cxx::helpers;
 
-ByteBuffer::ByteBuffer(char* data1, size_t capacity)
-	: base(data1), pos(0), lim(capacity), cap(capacity)
+ByteBuffer::ByteBuffer(Bytes data, size_t capacity)
+	: base(data), pos(0), lim(capacity), cap(capacity)
+{
+}
+
+ByteBuffer::ByteBuffer(char* data, size_t capacity)
+    : base((Bytes) data), pos(0), lim(capacity), cap(capacity)
 {
 }
 
@@ -67,7 +72,7 @@ void ByteBuffer::limit(size_t newLimit)
 }
 
 
-bool ByteBuffer::put(char byte)
+bool ByteBuffer::put(Byte byte)
 {
 	if (pos < lim)
 	{
