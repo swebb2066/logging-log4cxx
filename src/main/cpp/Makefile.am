@@ -15,15 +15,14 @@
 #
 lib_LTLIBRARIES = liblog4cxx.la
 
-INCLUDES = -I$(top_srcdir)/src/main/include -I$(top_builddir)/src/main/include
-
+AM_CPPFLAGS = -I$(top_srcdir)/src/main/include -I$(top_builddir)/src/main/include
 
 liblog4cxx_la_SOURCES = \
         action.cpp \
+        andfilter.cpp \
         appenderattachableimpl.cpp \
         appenderskeleton.cpp \
         aprinitializer.cpp \
-        asyncappender.cpp \
         basicconfigurator.cpp \
         bufferedwriter.cpp \
         bytearrayinputstream.cpp \
@@ -73,6 +72,7 @@ liblog4cxx_la_SOURCES = \
         inputstreamreader.cpp \
         integer.cpp \
         integerpatternconverter.cpp \
+        jsonlayout.cpp \
         layout.cpp\
         level.cpp \
         levelmatchfilter.cpp \
@@ -81,6 +81,7 @@ liblog4cxx_la_SOURCES = \
         linelocationpatternconverter.cpp \
         lineseparatorpatternconverter.cpp \
         literalpatternconverter.cpp \
+        loggermatchfilter.cpp \
         loggerpatternconverter.cpp \
         loggingeventpatternconverter.cpp \
         loader.cpp\
@@ -92,6 +93,7 @@ liblog4cxx_la_SOURCES = \
         logmanager.cpp \
         logstream.cpp \
         manualtriggeringpolicy.cpp \
+        mapfilter.cpp \
         messagebuffer.cpp \
         messagepatternconverter.cpp \
         methodlocationpatternconverter.cpp \
@@ -168,6 +170,11 @@ liblog4cxx_la_SOURCES = \
         xmlsocketappender.cpp \
         zipcompressaction.cpp
 
-AM_CPPFLAGS = @CPPFLAGS_ODBC@
-liblog4cxx_la_LDFLAGS = -version-info @LT_VERSION@ @LIBS_ODBC@ -@APR_LIBS@
+if NON_BLOCKING
+liblog4cxx_la_SOURCES += asyncappender_nonblocking.cpp
+else
+liblog4cxx_la_SOURCES += asyncappender.cpp
+endif
 
+AM_CPPFLAGS += @CPPFLAGS_ODBC@
+liblog4cxx_la_LDFLAGS = -version-info @LT_VERSION@ @LIBS_ODBC@ -@APR_LIBS@

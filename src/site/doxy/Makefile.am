@@ -20,11 +20,11 @@ EXTRA_DIST = Doxyfile license_notice_footer.txt
 
 if DOC
 
-htmldest = $(pkgdatadir)/html
+htmldest = $(docdir)/html
 
 install-data-hook:
 	$(mkinstalldirs) $(DESTDIR)$(htmldest)
-	cp -dpR @manual_dest@/* $(DESTDIR)$(htmldest)
+	cp -pR @manual_dest@/* $(DESTDIR)$(htmldest)
 
 # Automake's "distcheck" is sensitive to having files left over
 # after "make uninstall", so we have to clean up the install hook.
@@ -40,7 +40,7 @@ pdf: @PACKAGE@.pdf
 	$(MAKE) -C ./latex pdf
 	ln -s ./latex/refman.ps	 @PACKAGE@.ps
 	ln -s ./latex/refman.pdf @PACKAGE@.pdf
-	
+
 endif
 
 else
@@ -83,4 +83,3 @@ clean-local:
 
 dist-hook:
 	-rm -f $(distdir)/Doxyfile
-
