@@ -64,7 +64,8 @@ jobs:
         ./bootstrap-vcpkg.bat
         ./vcpkg install apr apr-util --triplet=x64-windows
 
-    - name: 'run cmake'
+    - name: 'run cmake - msvc'
+      if: matrix.name == 'windows-2019-msvc'
       shell: pwsh
       run: |
         dir "C:\\msys64"
@@ -77,6 +78,22 @@ jobs:
         mkdir build
         cd build
         cmake -DLOG4CXX_TEST_PROGRAM_PATH=C:\msys64\usr\bin -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} -DCMAKE_C_COMPILER=${{ matrix.cc }} "-DCMAKE_TOOLCHAIN_FILE=$THISDIR/vcpkg/scripts/buildsystems/vcpkg.cmake" ..
+        cmake --build .
+
+    - name: 'run cmake - clang'
+      if: matrix.name == 'windows-2019-clang'
+      shell: pwsh
+      run: |
+        dir "C:\\msys64"
+        dir "C:\\msys64\\mingw64"
+        dir "C:\\msys64\\mingw64\\bin"
+        dir "C:\\msys64\\usr\\bin"
+        echo "C:\\msys64\\mingw64\\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        $THISDIR=Get-Location
+        cd main
+        mkdir build
+        cd build
+        cmake -DLOG4CXX_TEST_PROGRAM_PATH=C:\msys64\usr\bin -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} -DCMAKE_C_COMPILER=${{ matrix.cc }} "-DCMAKE_TOOLCHAIN_FILE=$THISDIR/vcpkg/scripts/buildsystems/vcpkg.cmake" -G 'MSYS Makefiles' ..
         cmake --build .
 
     - name: run unit tests
