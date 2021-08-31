@@ -67,6 +67,10 @@ jobs:
     - name: 'run cmake'
       shell: pwsh
       run: |
+        dir "C:\\msys64"
+        dir "C:\\msys64\\mingw64"
+        dir "C:\\msys64\\mingw64\\bin"
+        dir "C:\\msys64\\usr\\bin"
         echo "C:\\msys64\\mingw64\\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
         $THISDIR=Get-Location
         cd main
