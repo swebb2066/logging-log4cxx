@@ -1,0 +1,86 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+name: log4cxx-win
+
+on: [push, pull_request]
+
+jobs:
+  job:
+    name: ${{ matrix.os }}-${{ matrix.cxx }}-build-and-test
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 38
+    strategy:
+      fail-fast: false
+      matrix:
+        name: [windows-2019]
+        include:
+          - name: windows-2019
+            os: windows-2019
+            cxx: cl.exe
+            cc: cl.exe
+          - name: windows-2019
+            os: windows-2019
+            cxx: clang++.exe
+            cc: clang.exe
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        path: main
+
+    - name: 'Restore Prebuilt Dependencies'
+      id: restore-vcpkg-cache
+      if: matrix.name == 'windows-2019' || matrix.name == 'windows-2016'
+      uses: actions/cache@v2
+      with:
+        path: vcpkg
+        key: ${{ runner.os }}-${{ matrix.name }}-cache
+
+    - name: 'Checkout VCPKG'
+      if: (matrix.name == 'windows-2019' || matrix.name == 'windows-2016') && steps.restore-vcpkg-cache.outputs.cache-hit != 'true'
+      uses: actions/checkout@v2
+      with:
+        repository: microsoft/vcpkg
+        path: vcpkg
+        ref: ec6fe06e8da05a8157dc8581fa96b36b571c1bd5
+
+    - name: 'Configure Dependencies'
+      if: (matrix.name == 'windows-2019' || matrix.name == 'windows-2016') && steps.restore-vcpkg-cache.outputs.cache-hit != 'true'
+      id: runvcpkg
+      shell: pwsh
+      run: |
+        cd vcpkg
+        ./bootstrap-vcpkg.bat
+        ./vcpkg install apr apr-util --triplet=x64-windows
+
+    - name: 'run cmake'
+      if: (matrix.name == 'windows-2019' || matrix.name == 'windows-2016') 
+      shell: pwsh
+      run: |
+        echo "::add-path::C:\\msys64\\mingw64\\bin"
+        $THISDIR=Get-Location
+        cd main
+        mkdir build
+        cd build
+        cmake -DLOG4CXX_TEST_PROGRAM_PATH=C:\msys64\usr\bin "-DCMAKE_TOOLCHAIN_FILE=$THISDIR/vcpkg/scripts/buildsystems/vcpkg.cmake" -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} -DCMAKE_C_COMPILER=${{ matrix.cc }} ..
+        cmake --build .
+
+    - name: run unit tests
+      shell: pwsh
+      run: |
+        cd main
+        cd build
+        ctest -C Debug --output-on-failure -V
+
