@@ -42,14 +42,13 @@ jobs:
 
     - name: 'Restore Prebuilt Dependencies'
       id: restore-vcpkg-cache
-      if: matrix.name == 'windows-2019' || matrix.name == 'windows-2016'
       uses: actions/cache@v2
       with:
         path: vcpkg
         key: ${{ runner.os }}-${{ matrix.name }}-cache
 
     - name: 'Checkout VCPKG'
-      if: (matrix.name == 'windows-2019' || matrix.name == 'windows-2016') && steps.restore-vcpkg-cache.outputs.cache-hit != 'true'
+      if: steps.restore-vcpkg-cache.outputs.cache-hit != 'true'
       uses: actions/checkout@v2
       with:
         repository: microsoft/vcpkg
@@ -57,7 +56,7 @@ jobs:
         ref: ec6fe06e8da05a8157dc8581fa96b36b571c1bd5
 
     - name: 'Configure Dependencies'
-      if: (matrix.name == 'windows-2019' || matrix.name == 'windows-2016') && steps.restore-vcpkg-cache.outputs.cache-hit != 'true'
+      if: steps.restore-vcpkg-cache.outputs.cache-hit != 'true'
       id: runvcpkg
       shell: pwsh
       run: |
@@ -66,7 +65,6 @@ jobs:
         ./vcpkg install apr apr-util --triplet=x64-windows
 
     - name: 'run cmake'
-      if: (matrix.name == 'windows-2019' || matrix.name == 'windows-2016') 
       shell: pwsh
       run: |
         echo "C:\\msys64\\mingw64\\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
