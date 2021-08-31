@@ -24,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        name: [windows-2019]
+        name: [windows-2019-msvc, windows-2019-clang]
         include:
           - name: windows-2019-msvc
             os: windows-2019
