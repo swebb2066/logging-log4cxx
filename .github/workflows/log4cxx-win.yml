@@ -26,11 +26,11 @@ jobs:
       matrix:
         name: [windows-2019]
         include:
-          - name: windows-2019
+          - name: windows-2019-msvc
             os: windows-2019
             cxx: cl.exe
             cc: cl.exe
-          - name: windows-2019
+          - name: windows-2019-clang
             os: windows-2019
             cxx: clang++.exe
             cc: clang.exe
@@ -69,7 +69,7 @@ jobs:
       if: (matrix.name == 'windows-2019' || matrix.name == 'windows-2016') 
       shell: pwsh
       run: |
-        echo "::add-path::C:\\msys64\\mingw64\\bin"
+        echo "C:\\msys64\\mingw64\\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
         $THISDIR=Get-Location
         cd main
         mkdir build
