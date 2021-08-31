@@ -89,11 +89,12 @@ jobs:
         dir "C:\\msys64\\mingw64"
         dir "C:\\msys64\\mingw64\\bin"
         dir "C:\\msys64\\usr\\bin"
+        echo "%PATH%"
         $THISDIR=Get-Location
         cd main
         mkdir build
         cd build
-        cmake -DLOG4CXX_TEST_PROGRAM_PATH=C:\msys64\usr\bin -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} -DCMAKE_C_COMPILER=${{ matrix.cc }} "-DCMAKE_TOOLCHAIN_FILE=$THISDIR/vcpkg/scripts/buildsystems/vcpkg.cmake" -G 'MSYS Makefiles' ..
+        cmake -DLOG4CXX_TEST_PROGRAM_PATH=C:\msys64\usr\bin -DCMAKE_CXX_COMPILER=clang++.exe -DCMAKE_C_COMPILER=clang.exe "-DCMAKE_TOOLCHAIN_FILE=$THISDIR/vcpkg/scripts/buildsystems/vcpkg.cmake" -G 'MSYS Makefiles' ..
         cmake --build .
 
     - name: run unit tests
